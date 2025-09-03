@@ -20,15 +20,11 @@ const TOTAL_PER_CARTON_OZ = 32 + 16 + 59 + 59; // 166 (ube tbsp excluded)
 const OZ_PER_QT = 32;
 const ML_PER_OZ = 29.5735;
 
+// Types
 type Flavor = 'NoUbe' | 'DirtyUbe';
 
-const baseRecipes: Record<Flavor, Recipe> = {
-  NoUbe:    { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0   },
-  DirtyUbe: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
-};
- satisfies Record<string, Recipe>;
+// type Recipe = typeof baseRecipes.tikiChata;
 
-type Recipe = typeof baseRecipes.tikiChata;
 
 type Recipe = Readonly<{
   coconutOz: number;
@@ -37,6 +33,16 @@ type Recipe = Readonly<{
   waterOz: number;
   ubeTbsp: number;
 }>;
+
+// Base recipes
+const baseRecipes: Record<Flavor, Recipe> = {
+  NoUbe:    { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0   },
+  DirtyUbe: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
+}; satisfies Record<string, Recipe>;
+
+
+
+
 
 let leadFlavor: Flavor;
 let otherFlavor: Flavor;
@@ -61,7 +67,7 @@ function computeScaled(recipe: Recipe, cartons: number) {
   const totalOz = coconut + horchata + coffee + water; // ube tbsp excluded
   return { k, coconut, horchata, coffee, water, ubeTbsp, totalOz };
 }
-function computeScaledFrac(recipe: Recipe, cartonsEq: number) { {
+function computeScaledFrac(recipe: Recipe, cartonsEq: number) {
   const k = Math.max(0, Number(cartonsFrac) || 0);
   const coconut = recipe.coconutOz * k;
   const horchata = recipe.horchataOz * k;
