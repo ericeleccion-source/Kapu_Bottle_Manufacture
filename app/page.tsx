@@ -22,10 +22,18 @@ const ML_PER_OZ = 29.5735;
 
 const baseRecipes = {
   tikiChata: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0 },
-  dirtyUbe:  { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
-} as const;
+  DirtyUbe: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
+} satisfies Record<string, Recipe>;
 
 type Recipe = typeof baseRecipes.tikiChata;
+
+type Recipe = Readonly<{
+  coconutOz: number;
+  horchataOz: number;
+  coffeeConcOz: number;
+  waterOz: number;
+  ubeTbsp: number;
+}>;
 
 function round2(n: number) { return Math.round((n + Number.EPSILON) * 100) / 100; }
 function fmt(n: number) { return round2(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
@@ -43,7 +51,7 @@ function computeScaled(recipe: Recipe, cartons: number) {
   const totalOz = coconut + horchata + coffee + water; // ube tbsp excluded
   return { k, coconut, horchata, coffee, water, ubeTbsp, totalOz };
 }
-function computeScaledFrac(recipe: Recipe, cartonsFrac: number) {
+function computeScaledFrac(recipe: Recipe, cartonsEq: number) {
   const k = Math.max(0, Number(cartonsFrac) || 0);
   const coconut = recipe.coconutOz * k;
   const horchata = recipe.horchataOz * k;
