@@ -1,7 +1,6 @@
 ﻿// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // leave defaults; no distDir, no output: 'export'
+  distDir: 'dist',   // <- add this line
 };
-
 export default nextConfig;
