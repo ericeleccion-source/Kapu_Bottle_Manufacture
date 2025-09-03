@@ -38,12 +38,16 @@ const baseRecipes: Record<Flavor, Recipe> = {
 
 
 
+const leadFlavor: Flavor  = 'DirtyUbe';
+const otherFlavor: Flavor = 'NoUbe';
+
+const leadScaled  = computeScaledFrac(baseRecipes[leadFlavor],  leadCartonsEq);
+const otherScaled = computeScaledFrac(baseRecipes[otherFlavor], otherCartonsEq);
+
 
 let leadFlavor: Flavor;
 let otherFlavor: Flavor;
 
-const leadScaled  = computeScaledFrac(baseRecipes[leadFlavor],  leadCartonsEq);
-const otherScaled = computeScaledFrac(baseRecipes[otherFlavor], otherCartonsEq);
 
 
 function round2(n: number) { return Math.round((n + Number.EPSILON) * 100) / 100; }
