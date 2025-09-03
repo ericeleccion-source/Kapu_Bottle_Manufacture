@@ -45,10 +45,6 @@ const leadScaled  = computeScaledFrac(baseRecipes[leadFlavor],  leadCartonsEq);
 const otherScaled = computeScaledFrac(baseRecipes[otherFlavor], otherCartonsEq);
 
 
-let leadFlavor: Flavor;
-let otherFlavor: Flavor;
-
-
 
 function round2(n: number) { return Math.round((n + Number.EPSILON) * 100) / 100; }
 function fmt(n: number) { return round2(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
