@@ -23,23 +23,18 @@ const ML_PER_OZ = 29.5735;
 // Types
 type Flavor = 'NoUbe' | 'DirtyUbe';
 
-// type Recipe = typeof baseRecipes.tikiChata;
-
-
-type Recipe = Readonly<{
+type Recipe = {
   coconutOz: number;
   horchataOz: number;
   coffeeConcOz: number;
   waterOz: number;
   ubeTbsp: number;
-}>;
+};
 
-// Base recipes
 const baseRecipes: Record<Flavor, Recipe> = {
-  NoUbe:    { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0   },
+  NoUbe:    { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0 },
   DirtyUbe: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
-}; satisfies Record<string, Recipe>;
-
+};
 
 
 
