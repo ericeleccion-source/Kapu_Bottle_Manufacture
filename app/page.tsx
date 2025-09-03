@@ -5,12 +5,12 @@ import React, { useMemo, useState, useEffect } from "react";
 /**
  * Flavored Cold Brew Bottle Calculator - Stable + Bottle Split Mode
  * -----------------------------------------------------------------
- * â€¢ Scales linearly by 32 fl oz coconut milk cartons.
- * â€¢ Bottle size defaults to 12 fl oz.
- * â€¢ Ube concentrate reported ONLY in tbsp.
- * â€¢ Split-by-Cartons planner (simple & robust) + NEW Split-by-Bottles (lead flavor clamps; other auto-fills).
- * â€¢ Shows Horchata Base, Cold Brew Base, and Total with qt & mL conversions.
- * â€¢ Tiny unit test harness rendered at the bottom.
+ * • Scales linearly by 32 fl oz coconut milk cartons.
+ * • Bottle size defaults to 12 fl oz.
+ * • Ube concentrate reported ONLY in tbsp.
+ * • Split-by-Cartons planner (simple & robust) + Split-by-Bottles (lead clamps; other auto-fills).
+ * • Shows Horchata Base, Cold Brew Base, and Total with qt & mL conversions.
+ * • Tiny unit test harness rendered at the bottom.
  *
  * NOTE: Self-contained (no external UI libs) to avoid preview/CDN issues.
  */
@@ -20,8 +20,8 @@ const TOTAL_PER_CARTON_OZ = 32 + 16 + 59 + 59; // 166 (ube tbsp excluded)
 const OZ_PER_QT = 32;
 const ML_PER_OZ = 29.5735;
 
-// Types
-type Flavor = 'NoUbe' | 'DirtyUbe';
+// Types (use consistent flavor keys across the file)
+type Flavor = "tikiChata" | "dirtyUbe";
 
 type Recipe = {
   coconutOz: number;
@@ -31,26 +31,21 @@ type Recipe = {
   ubeTbsp: number;
 };
 
+// Base recipes keyed by Flavor
 const baseRecipes: Record<Flavor, Recipe> = {
-  NoUbe:    { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0 },
-  DirtyUbe: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
+  tikiChata: { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 0 },
+  dirtyUbe:  { coconutOz: 32, horchataOz: 16, coffeeConcOz: 59, waterOz: 59, ubeTbsp: 1.5 },
 };
 
-
-
-const leadFlavor: Flavor  = 'DirtyUbe';
-const otherFlavor: Flavor = 'NoUbe';
-
-const leadScaled  = computeScaledFrac(baseRecipes[leadFlavor],  leadCartonsEq);
-const otherScaled = computeScaledFrac(baseRecipes[otherFlavor], otherCartonsEq);
-
-
-
-function round2(n: number) { return Math.round((n + Number.EPSILON) * 100) / 100; }
-function fmt(n: number) { return round2(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function round2(n: number) {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+function fmt(n: number) {
+  return round2(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
 const toQt = (oz: number) => oz / OZ_PER_QT;
 const toMl = (oz: number) => oz * ML_PER_OZ;
-const unitTriplet = (oz: number) => `${fmt(oz)} fl oz . ${fmt(toQt(oz))} qt . ${fmt(toMl(oz))} mL`;
+const unitTriplet = (oz: number) => `${fmt(oz)} fl oz · ${fmt(toQt(oz))} qt · ${fmt(toMl(oz))} mL`;
 
 function computeScaled(recipe: Recipe, cartons: number) {
   const k = Math.max(0, Math.floor(cartons) || 0);
@@ -62,8 +57,9 @@ function computeScaled(recipe: Recipe, cartons: number) {
   const totalOz = coconut + horchata + coffee + water; // ube tbsp excluded
   return { k, coconut, horchata, coffee, water, ubeTbsp, totalOz };
 }
+
 function computeScaledFrac(recipe: Recipe, cartonsEq: number) {
-  const k = Math.max(0, Number(cartonsFrac) || 0);
+  const k = Math.max(0, Number(cartonsEq) || 0); // <-- fixed var name
   const coconut = recipe.coconutOz * k;
   const horchata = recipe.horchataOz * k;
   const coffee = recipe.coffeeConcOz * k;
@@ -72,6 +68,7 @@ function computeScaledFrac(recipe: Recipe, cartonsEq: number) {
   const totalOz = coconut + horchata + coffee + water;
   return { k, coconut, horchata, coffee, water, ubeTbsp, totalOz };
 }
+
 function yieldFor(totalOz: number, bottleSizeOz: number) {
   const size = Math.max(1, bottleSizeOz || 0);
   const fullBottles = Math.floor(totalOz / size);
@@ -84,7 +81,7 @@ function topOff(remainderOz: number, bottleSizeOz: number) {
   const leftoverOz = remainderOz - extraBottles * size;
   return { extraBottles, leftoverOz };
 }
-function basesFromScaled(x: { coconut: number; horchata: number; coffee: number; water: number; totalOz: number; }) {
+function basesFromScaled(x: { coconut: number; horchata: number; coffee: number; water: number; totalOz: number }) {
   const horchataBaseOz = x.coconut + x.horchata;
   const coldBrewBaseOz = x.coffee + x.water;
   const totalMixOz = x.totalOz;
@@ -95,7 +92,7 @@ function basesFromScaled(x: { coconut: number; horchata: number; coffee: number;
 function planByBottles(
   cartons: number,
   bottleSizeOz: number,
-  leadFlavor: "dirtyUbe" | "tikiChata",
+  leadFlavor: Flavor,
   leadBottlesRaw: number
 ) {
   const capacityOz = Math.max(0, cartons) * TOTAL_PER_CARTON_OZ;
@@ -104,7 +101,7 @@ function planByBottles(
 
   const leadBottles = Math.max(0, Math.min(Math.floor(leadBottlesRaw || 0), capacityBottles));
   const remainingBottlesCap = Math.max(0, capacityBottles - leadBottles);
-  const otherFlavor = leadFlavor === "dirtyUbe" ? "tikiChata" : "dirtyUbe";
+  const otherFlavor: Flavor = leadFlavor === "dirtyUbe" ? "tikiChata" : "dirtyUbe";
 
   const leadUsedOz = leadBottles * size;
   const otherBottles = remainingBottlesCap; // clamp other to whatever remains
@@ -121,10 +118,10 @@ function planByBottles(
 }
 
 // Simple inline components to avoid external UI deps
-function Card(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className||"")+" rounded-2xl border bg-white shadow-sm"} />; }
-function CardHeader(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className||"")+" p-4 pb-2"} />; }
-function CardContent(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className||"")+" px-4 pb-4"} />; }
-function CardTitle(props: React.HTMLAttributes<HTMLHeadingElement>) { return <h3 {...props} className={(props.className||"")+" text-lg font-semibold"} />; }
+function Card(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className || "") + " rounded-2xl border bg-white shadow-sm"} />; }
+function CardHeader(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className || "") + " p-4 pb-2"} />; }
+function CardContent(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className || "") + " px-4 pb-4"} />; }
+function CardTitle(props: React.HTMLAttributes<HTMLHeadingElement>) { return <h3 {...props} className={(props.className || "") + " text-lg font-semibold"} />; }
 
 function BottleSvg({ className = "inline-block h-4 w-4 align-[-2px]" }: { className?: string }) {
   return (
@@ -146,7 +143,7 @@ export default function FlavoredColdBrewBottleCalculator() {
   const tikiCartons = Math.max(0, cartons - ubeCartons);
 
   // Split-by-Bottles (lead clamps; other auto-fills)
-  const [leadFlavor, setLeadFlavor] = useState<"dirtyUbe"|"tikiChata">("dirtyUbe");
+  const [leadFlavor, setLeadFlavor] = useState<Flavor>("dirtyUbe");
   const [leadBottles, setLeadBottles] = useState<number>(0);
 
   useEffect(() => {
@@ -155,7 +152,7 @@ export default function FlavoredColdBrewBottleCalculator() {
     // clamp lead bottles to new capacity
     const size = Math.max(1, bottleSizeOz || 0);
     const capB = Math.floor((cartons * TOTAL_PER_CARTON_OZ) / size);
-    setLeadBottles((b) => Math.max(0, Math.min(Math.floor(b||0), capB)));
+    setLeadBottles((b) => Math.max(0, Math.min(Math.floor(b || 0), capB)));
   }, [cartons, bottleSizeOz]);
 
   // Full-batch for reference (all cartons one flavor)
@@ -163,8 +160,8 @@ export default function FlavoredColdBrewBottleCalculator() {
   const ubeAll  = useMemo(() => computeScaled(baseRecipes.dirtyUbe, cartons), [cartons]);
 
   // Split results (cartons)
-  const tikiSplit = useMemo(() => computeScaled(baseRecipes.tikiChata, tikiCartons), [tikiCartons]);
-  const ubeSplit  = useMemo(() => computeScaled(baseRecipes.dirtyUbe, ubeCartons), [ubeCartons]);
+  const tikiSplit  = useMemo(() => computeScaled(baseRecipes.tikiChata, tikiCartons), [tikiCartons]);
+  const ubeSplit   = useMemo(() => computeScaled(baseRecipes.dirtyUbe, ubeCartons), [ubeCartons]);
   const tikiSplitY = useMemo(() => yieldFor(tikiSplit.totalOz, bottleSizeOz), [tikiSplit, bottleSizeOz]);
   const ubeSplitY  = useMemo(() => yieldFor(ubeSplit.totalOz, bottleSizeOz), [ubeSplit, bottleSizeOz]);
   const tikiSplitB = useMemo(() => basesFromScaled(tikiSplit), [tikiSplit]);
@@ -174,13 +171,13 @@ export default function FlavoredColdBrewBottleCalculator() {
 
   // Split results (bottles)
   const bottlePlan = useMemo(() => planByBottles(cartons, bottleSizeOz, leadFlavor, leadBottles), [cartons, bottleSizeOz, leadFlavor, leadBottles]);
-  const leadYield = useMemo(() => yieldFor(bottlePlan.leadScaled.totalOz, bottleSizeOz), [bottlePlan, bottleSizeOz]);
+  const leadYield  = useMemo(() => yieldFor(bottlePlan.leadScaled.totalOz, bottleSizeOz), [bottlePlan, bottleSizeOz]);
   const otherYield = useMemo(() => yieldFor(bottlePlan.otherScaled.totalOz, bottleSizeOz), [bottlePlan, bottleSizeOz]);
-  const leadBases = useMemo(() => basesFromScaled(bottlePlan.leadScaled), [bottlePlan]);
+  const leadBases  = useMemo(() => basesFromScaled(bottlePlan.leadScaled), [bottlePlan]);
   const otherBases = useMemo(() => basesFromScaled(bottlePlan.otherScaled), [bottlePlan]);
 
   // ------------- tiny tests -------------
-  const approxEq = (a: number, b: number, eps=1e-6) => Math.abs(a-b) < eps;
+  const approxEq = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
   const tests: { name: string; run: () => true | string | boolean }[] = [
     { name: "computeScaled tiki (1 carton)", run: () => { const x = computeScaled(baseRecipes.tikiChata, 1); return (x.coconut===32 && x.horchata===16 && x.coffee===59 && x.water===59 && x.ubeTbsp===0 && x.totalOz===166) || `unexpected ${JSON.stringify(x)}`; } },
     { name: "computeScaled dirtyUbe (2 cartons)", run: () => { const x = computeScaled(baseRecipes.dirtyUbe, 2); return (x.ubeTbsp===3 && x.totalOz===332) || `expected ube=3, total=332 got ${x.ubeTbsp}, ${x.totalOz}`; } },
@@ -189,9 +186,15 @@ export default function FlavoredColdBrewBottleCalculator() {
     { name: "basesFromScaled tiki (1 carton)", run: () => { const b = basesFromScaled(computeScaled(baseRecipes.tikiChata,1)); return (b.horchataBaseOz===48 && b.coldBrewBaseOz===118 && b.totalMixOz===166) || `unexpected ${JSON.stringify(b)}`; } },
     { name: "computeScaledFrac dirtyUbe (0.5 carton)", run: () => { const x = computeScaledFrac(baseRecipes.dirtyUbe,0.5); return (approxEq(x.ubeTbsp,0.75) && approxEq(x.totalOz,83)) || `expected ube=0.75 total=83 got ${x.ubeTbsp} & ${x.totalOz}`; } },
     { name: "capacity calc @1 carton, 12oz", run: () => { const capB = Math.floor(TOTAL_PER_CARTON_OZ/12); const left = TOTAL_PER_CARTON_OZ%12; return (capB===13 && approxEq(left,10)) || `expected 13 & 10, got ${capB} & ${left}`; } },
-    { name: "bottle split ube=1 (1 carton @12)", run: () => { const size=12; const capOz=TOTAL_PER_CARTON_OZ; const capB=Math.floor(capOz/size); const leadB=1; const otherB=capB-leadB; const rem=capOz-capB*size; const u=computeScaledFrac(baseRecipes.dirtyUbe,(leadB*size)/TOTAL_PER_CARTON_OZ); const t=computeScaledFrac(baseRecipes.tikiChata,(otherB*size)/TOTAL_PER_CARTON_OZ); return (otherB===12 && approxEq(rem,10) && approxEq(u.totalOz+t.totalOz, capB*size)) || `expected other=12 rem=10 sum=${capB*size} got other=${otherB} rem=${rem} sum=${u.totalOz+t.totalOz}`; } },
+    { name: "bottle split ube=1 (1 carton @12)", run: () => {
+      const size=12; const capOz=TOTAL_PER_CARTON_OZ; const capB=Math.floor(capOz/size);
+      const leadB=1; const otherB=capB-leadB; const rem=capOz-capB*size;
+      const u=computeScaledFrac(baseRecipes.dirtyUbe,(leadB*size)/TOTAL_PER_CARTON_OZ);
+      const t=computeScaledFrac(baseRecipes.tikiChata,(otherB*size)/TOTAL_PER_CARTON_OZ);
+      return (otherB===12 && approxEq(rem,10) && approxEq(u.totalOz+t.totalOz, capB*size)) || `expected other=12 rem=10 sum=${capB*size} got other=${otherB} rem=${rem} sum=${u.totalOz+t.totalOz}`;
+    }},
   ];
-  const results = tests.map(t=>{ try{ const r=t.run(); return {name:t.name, ok:(r===true||r===1||r==="true"||r==="OK"), msg:r===true?"":String(r)} }catch(e:any){ return {name:t.name, ok:false, msg:e?.message||String(e)} }});
+  const results = tests.map(t => { try { const r = t.run(); return { name: t.name, ok: (r === true || r === 1 || r === "true" || r === "OK"), msg: r === true ? "" : String(r) }; } catch (e: any) { return { name: t.name, ok: false, msg: e?.message || String(e) }; } });
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white text-slate-900">
