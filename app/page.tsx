@@ -8,11 +8,9 @@ import React, { useMemo, useState, useEffect } from "react";
  * • Scales linearly by 32 fl oz coconut milk cartons.
  * • Bottle size defaults to 12 fl oz.
  * • Ube concentrate reported ONLY in tbsp.
- * • Split-by-Cartons planner (simple & robust) + Split-by-Bottles (lead clamps; other auto-fills).
+ * • Split-by-Cartons planner + Split-by-Bottles (lead clamps; other auto-fills).
  * • Shows Horchata Base, Cold Brew Base, and Total with qt & mL conversions.
  * • Tiny unit test harness rendered at the bottom.
- *
- * NOTE: Self-contained (no external UI libs) to avoid preview/CDN issues.
  */
 
 // ---------------- constants & helpers ----------------
@@ -59,7 +57,7 @@ function computeScaled(recipe: Recipe, cartons: number) {
 }
 
 function computeScaledFrac(recipe: Recipe, cartonsEq: number) {
-  const k = Math.max(0, Number(cartonsEq) || 0); // <-- fixed var name
+  const k = Math.max(0, Number(cartonsEq) || 0);
   const coconut = recipe.coconutOz * k;
   const horchata = recipe.horchataOz * k;
   const coffee = recipe.coffeeConcOz * k;
@@ -117,11 +115,19 @@ function planByBottles(
   return { capacityOz, capacityBottles, size, leadFlavor, otherFlavor, leadBottles, otherBottles, remainderOz, leadScaled, otherScaled };
 }
 
-// Simple inline components to avoid external UI deps
-function Card(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className || "") + " rounded-2xl border bg-white shadow-sm"} />; }
-function CardHeader(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className || "") + " p-4 pb-2"} />; }
-function CardContent(props: React.HTMLAttributes<HTMLDivElement>) { return <div {...props} className={(props.className || "") + " px-4 pb-4"} />; }
-function CardTitle(props: React.HTMLAttributes<HTMLHeadingElement>) { return <h3 {...props} className={(props.className || "") + " text-lg font-semibold"} />; }
+// ---------------- minimal UI primitives (render children!) ----------------
+function Card({ className = "", children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div {...rest} className={`rounded-2xl border bg-white shadow-sm ${className}`}>{children}</div>;
+}
+function CardHeader({ className = "", children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div {...rest} className={`p-4 pb-2 ${className}`}>{children}</div>;
+}
+function CardContent({ className = "", children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div {...rest} className={`px-4 pb-4 ${className}`}>{children}</div>;
+}
+function CardTitle({ className = "", children, ...rest }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return <h3 {...rest} className={`text-lg font-semibold ${className}`}>{children}</h3>;
+}
 
 function BottleSvg({ className = "inline-block h-4 w-4 align-[-2px]" }: { className?: string }) {
   return (
@@ -147,7 +153,7 @@ export default function FlavoredColdBrewBottleCalculator() {
   const [leadBottles, setLeadBottles] = useState<number>(0);
 
   useEffect(() => {
-    // keep ubeCartons in range when cartons changes
+    // keep ubeCartons in range when cartons change
     setUbeCartons((c) => Math.min(Math.max(0, Math.floor(c)), Math.max(0, Math.floor(cartons))));
     // clamp lead bottles to new capacity
     const size = Math.max(1, bottleSizeOz || 0);
