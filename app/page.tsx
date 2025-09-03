@@ -182,25 +182,66 @@ export default function FlavoredColdBrewBottleCalculator() {
   const leadBases  = useMemo(() => basesFromScaled(bottlePlan.leadScaled), [bottlePlan]);
   const otherBases = useMemo(() => basesFromScaled(bottlePlan.otherScaled), [bottlePlan]);
 
-  // ------------- tiny tests -------------
-  const approxEq = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
-  const tests: { name: string; run: () => true | string | boolean }[] = [
-    { name: "computeScaled tiki (1 carton)", run: () => { const x = computeScaled(baseRecipes.tikiChata, 1); return (x.coconut===32 && x.horchata===16 && x.coffee===59 && x.water===59 && x.ubeTbsp===0 && x.totalOz===166) || `unexpected ${JSON.stringify(x)}`; } },
-    { name: "computeScaled dirtyUbe (2 cartons)", run: () => { const x = computeScaled(baseRecipes.dirtyUbe, 2); return (x.ubeTbsp===3 && x.totalOz===332) || `expected ube=3, total=332 got ${x.ubeTbsp}, ${x.totalOz}`; } },
-    { name: "yieldFor 166oz @12", run: () => { const y = yieldFor(166, 12); return (y.fullBottles===13 && approxEq(y.remainderOz,10)) || `expected 13 & 10, got ${y.fullBottles} & ${y.remainderOz}`; } },
-    { name: "topOff 22 @12", run: () => { const t = topOff(22,12); return (t.extraBottles===1 && approxEq(t.leftoverOz,10)) || `expected 1 & 10, got ${t.extraBottles} & ${t.leftoverOz}`; } },
-    { name: "basesFromScaled tiki (1 carton)", run: () => { const b = basesFromScaled(computeScaled(baseRecipes.tikiChata,1)); return (b.horchataBaseOz===48 && b.coldBrewBaseOz===118 && b.totalMixOz===166) || `unexpected ${JSON.stringify(b)}`; } },
-    { name: "computeScaledFrac dirtyUbe (0.5 carton)", run: () => { const x = computeScaledFrac(baseRecipes.dirtyUbe,0.5); return (approxEq(x.ubeTbsp,0.75) && approxEq(x.totalOz,83)) || `expected ube=0.75 total=83 got ${x.ubeTbsp} & ${x.totalOz}`; } },
-    { name: "capacity calc @1 carton, 12oz", run: () => { const capB = Math.floor(TOTAL_PER_CARTON_OZ/12); const left = TOTAL_PER_CARTON_OZ%12; return (capB===13 && approxEq(left,10)) || `expected 13 & 10, got ${capB} & ${left}`; } },
-    { name: "bottle split ube=1 (1 carton @12)", run: () => {
+// ------------- tiny tests -------------
+type TestResult = true | string;
+
+const approxEq = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
+
+const tests: { name: string; run: () => TestResult }[] = [
+  { name: "computeScaled tiki (1 carton)", run: () => {
+      const x = computeScaled(baseRecipes.tikiChata, 1);
+      return (x.coconut===32 && x.horchata===16 && x.coffee===59 && x.water===59 && x.ubeTbsp===0 && x.totalOz===166)
+        ? true : `unexpected ${JSON.stringify(x)}`;
+  }},
+  { name: "computeScaled dirtyUbe (2 cartons)", run: () => {
+      const x = computeScaled(baseRecipes.dirtyUbe, 2);
+      return (x.ubeTbsp===3 && x.totalOz===332)
+        ? true : `expected ube=3, total=332 got ${x.ubeTbsp}, ${x.totalOz}`;
+  }},
+  { name: "yieldFor 166oz @12", run: () => {
+      const y = yieldFor(166, 12);
+      return (y.fullBottles===13 && approxEq(y.remainderOz,10))
+        ? true : `expected 13 & 10, got ${y.fullBottles} & ${y.remainderOz}`;
+  }},
+  { name: "topOff 22 @12", run: () => {
+      const t = topOff(22,12);
+      return (t.extraBottles===1 && approxEq(t.leftoverOz,10))
+        ? true : `expected 1 & 10, got ${t.extraBottles} & ${t.leftoverOz}`;
+  }},
+  { name: "basesFromScaled tiki (1 carton)", run: () => {
+      const b = basesFromScaled(computeScaled(baseRecipes.tikiChata,1));
+      return (b.horchataBaseOz===48 && b.coldBrewBaseOz===118 && b.totalMixOz===166)
+        ? true : `unexpected ${JSON.stringify(b)}`;
+  }},
+  { name: "computeScaledFrac dirtyUbe (0.5 carton)", run: () => {
+      const x = computeScaledFrac(baseRecipes.dirtyUbe,0.5);
+      return (approxEq(x.ubeTbsp,0.75) && approxEq(x.totalOz,83))
+        ? true : `expected ube=0.75 total=83 got ${x.ubeTbsp} & ${x.totalOz}`;
+  }},
+  { name: "capacity calc @1 carton, 12oz", run: () => {
+      const capB = Math.floor(TOTAL_PER_CARTON_OZ/12);
+      const left = TOTAL_PER_CARTON_OZ%12;
+      return (capB===13 && approxEq(left,10))
+        ? true : `expected 13 & 10, got ${capB} & ${left}`;
+  }},
+  { name: "bottle split ube=1 (1 carton @12)", run: () => {
       const size=12; const capOz=TOTAL_PER_CARTON_OZ; const capB=Math.floor(capOz/size);
       const leadB=1; const otherB=capB-leadB; const rem=capOz-capB*size;
       const u=computeScaledFrac(baseRecipes.dirtyUbe,(leadB*size)/TOTAL_PER_CARTON_OZ);
       const t=computeScaledFrac(baseRecipes.tikiChata,(otherB*size)/TOTAL_PER_CARTON_OZ);
-      return (otherB===12 && approxEq(rem,10) && approxEq(u.totalOz+t.totalOz, capB*size)) || `expected other=12 rem=10 sum=${capB*size} got other=${otherB} rem=${rem} sum=${u.totalOz+t.totalOz}`;
-    }},
-  ];
-  const results = tests.map(t => { try { const r = t.run(); return { name: t.name, ok: (r === true || r === 1 || r === "true" || r === "OK"), msg: r === true ? "" : String(r) }; } catch (e: any) { return { name: t.name, ok: false, msg: e?.message || String(e) }; } });
+      return (otherB===12 && approxEq(rem,10) && approxEq(u.totalOz+t.totalOz, capB*size))
+        ? true : `expected other=12 rem=10 sum=${capB*size} got other=${otherB} rem=${rem} sum=${u.totalOz+t.totalOz}`;
+  }},
+];
+
+const results = tests.map(t => {
+  try {
+    const r = t.run();
+    return { name: t.name, ok: r === true, msg: r === true ? "" : String(r) };
+  } catch (e: any) {
+    return { name: t.name, ok: false, msg: e?.message || String(e) };
+  }
+});
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 to-white text-slate-900">
