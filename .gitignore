@@ -14,8 +14,8 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
-C:\ColdBrewCalculator\flavored-cold-brew-calculator\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node
 
 .next
 out
 dist
+node_modules
